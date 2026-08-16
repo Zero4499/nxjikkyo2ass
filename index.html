@@ -451,7 +451,7 @@ function generateAss(){
       const pos = `\\pos(${Math.round(s.W/2)},${y})`;
       const end = start + m.durStatic;
       const shadow = tag("\\c" + shadowColor, shadowAlpha, `\\blur${blur}`, `\\fs${fs}`) + tag(an, `\\pos(${Math.round(s.W/2 + off)},${Math.round(y + off)})`) + text;
-      const main = tag("\\c" + color) + tag(an, pos) + text;
+      const main = tag("\\c" + color, `\\fs${fs}`) + tag(an, pos) + text;
       lines.push(`Dialogue: 0,${assTime(start)},${assTime(end)},Default,,0,0,0,,${shadow}`);
       lines.push(`Dialogue: 1,${assTime(start)},${assTime(end)},Default,,0,0,0,,${main}`);
     }
