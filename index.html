@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -99,6 +100,7 @@
     <div class="opts">
       <div class="opt"><label>播放器宽 W（px，行数/字号按此计算）</label><input type="number" id="oW" value="1920" min="300"></div>
       <div class="opt"><label>播放器高 H（px）</label><input type="number" id="oH" value="1080" min="200"></div>
+      <div class="opt"><label class="chk"><input type="checkbox" id="oStretch" checked>视频自动拉伸 16:9（1440×1080 → 1920×1080，W 按 H×16/9 重算，默认勾选）</label></div>
       <div class="opt"><label>comment_font_size 字号</label><input type="number" id="oFS" value="34" min="8"></div>
       <div class="opt"><label>comment_speed_rate 速度倍率</label><input type="number" id="oRate" value="1" min="0.1" step="0.1"></div>
       <div class="opt"><label>ASS 字体名</label><input type="text" id="oFont" value="Noto Sans JP"></div>
@@ -329,15 +331,24 @@ function build(){
 
 /* ================= DPlayer 模型参数 ================= */
 function settings(){
+  const H = Math.max(200, +$("oH").value || 1080);
+  let W = +$("oW").value || 1920;
+  if ($("oStretch").checked) W = Math.round(H * 16 / 9);   // 1440×1080 → 1920×1080
+  W = Math.max(300, W);
   return {
-    W: Math.max(300, +$("oW").value || 1920),
-    H: Math.max(200, +$("oH").value || 1080),
+    W, H,
     FONT_SIZE: Math.max(8, +$("oFS").value || 34),
     RATE: Math.max(0.1, +$("oRate").value || 1),
     FONT: $("oFont").value.trim() || "Noto Sans JP",
-    UNLIMITED: $("oUnlimit").checked
+    UNLIMITED: $("oUnlimit").checked,
+    STRETCH: $("oStretch").checked
   };
 }
+$("oStretch").onchange = () => {
+  if ($("oStretch").checked) $("oW").value = Math.round((Math.max(200, +$("oH").value || 1080)) * 16 / 9);
+  if (comments.length){ buildPlans(); generateAss(); drawFrame(curT); }
+  updateModelInfo();
+};
 function model(s){
   const ratio = Math.min(s.W / 1024 * 1.25, 1);
   const fontSize = s.FONT_SIZE * ratio;
@@ -552,10 +563,12 @@ function updateModelInfo(){
   const s = settings(), m = model(s);
   $("modelInfo").textContent =
     `当前模型：字号 ${Math.round(m.fontSize)}px ｜ 行高 ${Math.round(m.itemHeight)}px ｜ 轨道 ${m.rows} 行 ｜ 滚动 ${m.durRight.toFixed(2)}s / 顶底 ${m.durStatic.toFixed(2)}s。` +
-    `要与 NX-Jikkyo 同屏数量一致，请把 H 填成你播放器的实际像素高度（行数 = H ÷ ${(m.itemHeight).toFixed(1)}）。`;
+    `要与 NX-Jikkyo 同屏数量一致，请把 H 填成你播放器的实际像素高度（行数 = H ÷ ${(m.itemHeight).toFixed(1)}）。` +
+    (s.STRETCH ? ` ｜ PlayRes 已按 16:9 拉伸为 ${s.W}×${s.H}（1440×1080 → ${s.W}×${s.H}），ASS 不会被播放器拉变形。` : "");
 }
 document.querySelectorAll("button[data-w]").forEach(b => b.onclick = () => {
   $("oW").value = b.dataset.w; $("oH").value = b.dataset.h;
+  if ($("oStretch").checked) $("oW").value = Math.round((Math.max(200, +$("oH").value || 1080)) * 16 / 9);
   if (comments.length){ buildPlans(); generateAss(); drawFrame(curT); }
   updateModelInfo();
 });
